@@ -70,20 +70,41 @@ local function getInventoryCrops()
     return result
 end
 
+local SeedStock = {}
+
 local function getSeedStock(onlyWithStock)
-    local gui = Gui:FindFirstChild("Seed_Shop")
-    if not gui then return {} end
-    local items = gui:FindFirstChild("Blueberry", true).Parent:GetChildren()
+    local SeedShop = Gui:FindFirstChild("Seed_Shop")
+    if not SeedShop then return {} end
+
+    local ItemsParent = SeedShop:FindFirstChild("Blueberry", true)
+    if not ItemsParent or not ItemsParent.Parent then return {} end
+    local Items = ItemsParent.Parent:GetChildren()
+
     local result = {}
-    for _, item in pairs(items) do
-        local stockText = item:FindFirstChild("Main_Frame") and item.Main_Frame.Stock_Text.Text
-        local count = tonumber(stockText:match("%d+")) or 0
-        if not onlyWithStock or count > 0 then
-            result[item.Name] = count
+
+    for _, Item in pairs(Items) do
+        local MainFrame = Item:FindFirstChild("Main_Frame")
+        if not MainFrame then continue end
+
+        local StockText = MainFrame.Stock_Text.Text
+        local StockCount = tonumber(StockText:match("%d+")) or 0
+
+        if onlyWithStock then
+            if StockCount > 0 then
+                result[Item.Name] = StockCount
+            end
+        else
+            SeedStock[Item.Name] = StockCount
         end
     end
-    return result
+
+    if onlyWithStock then
+        return result
+    else
+        return SeedStock
+    end
 end
+
 
 --// Funções de ação
 local function plantAll(seed, random)
