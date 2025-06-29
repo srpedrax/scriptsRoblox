@@ -1,0 +1,221 @@
+-- Carrega a Magic Library
+local Magic = loadstring(game:HttpGet("https://raw.githubusercontent.com/srpedrax/Magic-Library/main/source/Source.lua"))()
+
+-- Cria a janela principal
+local Window = Magic:CreateWindow({
+    Title = GameInfo.Name .. " | Depso"
+})
+
+-- Cria a aba principal
+local MainTab = Window:MakeTab({
+    Name = "Grow a Garden"
+})
+
+-- Sessão Auto-Plant
+local PlantSection = Window:addSection(MainTab, { Name = "Auto-Plant 🥕" })
+SelectedSeed = { Selected = "" } -- estrutura simples para armazenar a seleção
+AutoPlant = { Value = false }
+AutoPlantRandom = { Value = false }
+
+Window:AddDropdown(PlantSection, {
+    Name = "Seed",
+    Options = {}, -- será atualizado depois
+    Default = "",
+    Callback = function(opt)
+        SelectedSeed.Selected = opt
+    end
+})
+
+Window:AddToggle(PlantSection, {
+    Name = "Enabled",
+    Default = false,
+    Callback = function(val)
+        AutoPlant.Value = val
+    end
+})
+
+Window:AddToggle(PlantSection, {
+    Name = "Plant at random points",
+    Default = false,
+    Callback = function(val)
+        AutoPlantRandom.Value = val
+    end
+})
+
+Window:AddButton(PlantSection, {
+    Name = "Plant all",
+    Callback = function()
+        AutoPlantLoop()
+    end
+})
+
+-- Sessão Auto-Harvest
+local HarvestSection = Window:addSection(MainTab, { Name = "Auto-Harvest 🚜" })
+AutoHarvest = { Value = false }
+HarvestIgnores = {
+    Normal = false,
+    Gold = false,
+    Rainbow = false
+}
+
+Window:AddToggle(HarvestSection, {
+    Name = "Enabled",
+    Default = false,
+    Callback = function(val)
+        AutoHarvest.Value = val
+    end
+})
+
+Window:AddToggle(HarvestSection, {
+    Name = "Ignore Normal",
+    Default = false,
+    Callback = function(val)
+        HarvestIgnores.Normal = val
+    end
+})
+
+Window:AddToggle(HarvestSection, {
+    Name = "Ignore Gold",
+    Default = false,
+    Callback = function(val)
+        HarvestIgnores.Gold = val
+    end
+})
+
+Window:AddToggle(HarvestSection, {
+    Name = "Ignore Rainbow",
+    Default = false,
+    Callback = function(val)
+        HarvestIgnores.Rainbow = val
+    end
+})
+
+-- Sessão Auto-Buy
+local BuySection = Window:addSection(MainTab, { Name = "Auto-Buy 🛒" })
+SelectedSeedStock = { Selected = "" }
+AutoBuy = { Value = false }
+OnlyShowStock = { Value = false }
+
+Window:AddDropdown(BuySection, {
+    Name = "Seed",
+    Options = {},
+    Default = "",
+    Callback = function(opt)
+        SelectedSeedStock.Selected = opt
+    end
+})
+
+Window:AddToggle(BuySection, {
+    Name = "Enabled",
+    Default = false,
+    Callback = function(val)
+        AutoBuy.Value = val
+    end
+})
+
+Window:AddToggle(BuySection, {
+    Name = "Only list stock",
+    Default = false,
+    Callback = function(val)
+        OnlyShowStock.Value = val
+    end
+})
+
+Window:AddButton(BuySection, {
+    Name = "Buy all",
+    Callback = function()
+        BuyAllSelectedSeeds()
+    end
+})
+
+-- Sessão Auto-Sell
+local SellSection = Window:addSection(MainTab, { Name = "Auto-Sell 💰" })
+AutoSell = { Value = false }
+SellThreshold = { Value = 15 }
+
+Window:AddButton(SellSection, {
+    Name = "Sell inventory",
+    Callback = function()
+        SellInventory()
+    end
+})
+
+Window:AddToggle(SellSection, {
+    Name = "Enabled",
+    Default = false,
+    Callback = function(val)
+        AutoSell.Value = val
+    end
+})
+
+Window:AddSlider(SellSection, {
+    Name = "Crops threshold",
+    Min = 1,
+    Max = 199,
+    DefaultValue = 15,
+    Callback = function(val)
+        SellThreshold.Value = val
+    end
+})
+
+-- Sessão Auto-Walk
+local WalkSection = Window:addSection(MainTab, { Name = "Auto-Walk 🚶" })
+AutoWalk = { Value = false }
+AutoWalkAllowRandom = { Value = true }
+NoClip = { Value = false }
+AutoWalkMaxWait = { Value = 10 }
+AutoWalkStatus = { Text = "None" } -- só placeholder, Magic Library não tem label dinâmico diretamente
+
+Window:AddToggle(WalkSection, {
+    Name = "Enabled",
+    Default = false,
+    Callback = function(val)
+        AutoWalk.Value = val
+    end
+})
+
+Window:AddToggle(WalkSection, {
+    Name = "Allow random points",
+    Default = true,
+    Callback = function(val)
+        AutoWalkAllowRandom.Value = val
+    end
+})
+
+Window:AddToggle(WalkSection, {
+    Name = "NoClip",
+    Default = false,
+    Callback = function(val)
+        NoClip.Value = val
+    end
+})
+
+Window:AddSlider(WalkSection, {
+    Name = "Max delay",
+    Min = 1,
+    Max = 120,
+    DefaultValue = 10,
+    Callback = function(val)
+        AutoWalkMaxWait.Value = val
+    end
+})
+
+-- Atualização dinâmica das opções do dropdown para Seeds
+local function UpdateSeedDropdowns()
+    local seeds = {}
+    local seedStockList = GetSeedStock(OnlyShowStock and OnlyShowStock.Value or false)
+    for seedName in pairs(seedStockList) do
+        table.insert(seeds, seedName)
+    end
+
+    -- Atualiza opções nos dropdowns
+    Window:GetDropdown(PlantSection):UpdateOptions(seeds)
+    Window:GetDropdown(BuySection):UpdateOptions(seeds)
+end
+
+-- Atualiza as opções a cada meio segundo
+spawn(function()
+    while wait(0.5) do
+        UpdateSeedDropdowns()
+    end
+end)
